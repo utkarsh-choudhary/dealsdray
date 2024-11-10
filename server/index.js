@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
@@ -10,7 +11,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // Database connection
-mongoose.connect("mongodb+srv://utkarsh:utkarsh123@cluster0.ouizt.mongodb.net/DEALSDRAY")
+mongoose.connect(process.env.MONGODB_URL)
   .then(() => {
     console.log("Connected to MongoDB");
   })
@@ -31,25 +32,19 @@ const userModel = mongoose.model("t_login", userSchema);
 app.post("/signup", async (req, res) => {
   const { f_userName, f_Email, f_Pwd } = req.body;
 
-
-  // Ensure all required fields are present
   if (!f_userName || !f_Email || !f_Pwd) {
     return res.status(400).json({ error: "Username, email, and password are required" });
   }
 
-  
   try {
-    // Check if the email or username already exists
     const existingUser = await userModel.findOne({ $or: [{ f_userName }, { f_Email }] });
     if (existingUser) {
       return res.status(400).json({ error: "Username or email already exists" });
     }
 
-    // Generate a unique f_sno for the new user
     const lastUser = await userModel.findOne().sort({ f_sno: -1 });
     const sno = lastUser ? lastUser.f_sno + 1 : 1;
 
-    // Create and save new user
     const newUser = new userModel({ f_sno: sno, f_userName, f_Email, f_Pwd });
     await newUser.save();
     res.status(201).json({ message: "User registered successfully" });
@@ -207,6 +202,7 @@ app.get('/searchEmployee/:id', async (req, res) => {
 });
 
 // Start server
-app.listen(3001, () => {
-  console.log("Server is running on port 3001");
-}); 
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
